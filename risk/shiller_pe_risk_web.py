@@ -64,8 +64,8 @@ def plot_charts(data):
             tickfont=dict(size=24, color='#CCCCCC'),  # Increased tick labels
         ),
         yaxis=dict(
-            title_font=dict(size=32, color='#CCCCCC'),  # Increased axis title
-            tickfont=dict(size=24, color='#CCCCCC'),  # Increased tick labels
+            title_font=dict(size=20, color='#CCCCCC'),  # Axis title
+            tickfont=dict(size=16, color='#CCCCCC'),  # Tick labels
         ),
         title_font=dict(size=36, color='#555555'),  # Lighter title color
         legend=dict(
@@ -132,8 +132,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=32, color='#CCCCCC')),
-            tickfont=dict(size=24, color='#CCCCCC')
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=20, color='#CCCCCC')),
+            tickfont=dict(size=16, color='#CCCCCC')
         )
     })
     
