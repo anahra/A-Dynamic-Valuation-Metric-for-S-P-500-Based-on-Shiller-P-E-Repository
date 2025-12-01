@@ -60,12 +60,12 @@ def plot_charts(data):
         xaxis=dict(
             tickformat='%Y',  # Show only years
             tickangle=0,      # Horizontal labels
-            title_font=dict(size=32, color='black'),  # Increased axis title
-            tickfont=dict(size=24),  # Increased tick labels
+            title_font=dict(size=32, color='#CCCCCC'),  # Increased axis title
+            tickfont=dict(size=24, color='#CCCCCC'),  # Increased tick labels
         ),
         yaxis=dict(
-            title_font=dict(size=32, color='black'),  # Increased axis title
-            tickfont=dict(size=24),  # Increased tick labels
+            title_font=dict(size=32, color='#CCCCCC'),  # Increased axis title
+            tickfont=dict(size=24, color='#CCCCCC'),  # Increased tick labels
         ),
         title_font=dict(size=36, color='#555555'),  # Lighter title color
         legend=dict(
@@ -91,10 +91,11 @@ def plot_charts(data):
         xaxis_title='Date',
         yaxis_title=dict(text='P/E Ratio', font=dict(size=16)),
         yaxis2=dict(
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16)),
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16, color='#CCCCCC')),
             overlaying='y',
             side='right',
-            type='log'
+            type='log',
+            tickfont=dict(color='#CCCCCC')
         ),
         **chart_settings
     )    # Create second chart: Historical stats
@@ -131,8 +132,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=32, color='black')),
-            tickfont=dict(size=24)
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=32, color='#CCCCCC')),
+            tickfont=dict(size=24, color='#CCCCCC')
         )
     })
     
@@ -151,8 +152,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='P/E Ratio (Log Scale)', font=dict(size=20, color='black')),
-            tickfont=dict(size=16)
+            title=dict(text='P/E Ratio (Log Scale)', font=dict(size=20, color='#CCCCCC')),
+            tickfont=dict(size=16, color='#CCCCCC')
         )
     })
     

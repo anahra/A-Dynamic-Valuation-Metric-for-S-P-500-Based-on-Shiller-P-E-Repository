@@ -107,23 +107,23 @@ elif app_mode == "Market Analysis":
     risk_figs = plot_charts(risk_data)
     
     # Tabs for full-screen graphs
-    tab1, tab2, tab3, tab4 = st.tabs(["Risk Analysis", "Rolling Statistics", "Historical Statistics", "Logarithmic Corridor"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Risk Analysis", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics"])
     
     with tab1:
         st.plotly_chart(risk_figs[2], use_container_width=True, key="risk_analysis")
         st.caption("S&P 500 price color-coded by the calculated Risk metric. Red indicates high risk (overvaluation), blue indicates low risk (undervaluation).")
         
     with tab2:
+        st.plotly_chart(risk_figs[3], use_container_width=True, key="log_corridor")
+        st.caption("Logarithmic view of the Shiller P/E ratio and its rolling bounds.")
+        
+    with tab3:
         st.plotly_chart(risk_figs[0], use_container_width=True, key="rolling_stats")
         st.caption("Shiller P/E ratio with rolling mean and ±3 standard deviation bands.")
         
-    with tab3:
+    with tab4:
         st.plotly_chart(risk_figs[1], use_container_width=True, key="historical_stats")
         st.caption("Shiller P/E ratio compared to its historical average and ±2 standard deviation bands.")
-        
-    with tab4:
-        st.plotly_chart(risk_figs[3], use_container_width=True, key="log_corridor")
-        st.caption("Logarithmic view of the Shiller P/E ratio and its rolling bounds.")
 
 elif app_mode == "Strategy Simulator":
     st.sidebar.markdown("---")
