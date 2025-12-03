@@ -23,13 +23,67 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS for styling the sidebar navigation
+st.markdown("""
+<style>
+    /* Style the container for the radio options */
+    [data-testid="stRadio"] > div {
+        gap: 10px;
+    }
+
+    /* Style each option label */
+    [data-testid="stRadio"] label {
+        background-color: #0E1117; /* Match sidebar background or slightly lighter */
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(250, 250, 250, 0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        display: flex;
+        justify-content: center; /* Center text */
+        align-items: center;
+    }
+
+    /* Hover effect */
+    [data-testid="stRadio"] label:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Selected state */
+    [data-testid="stRadio"] label:has(input:checked) {
+        background-color: rgba(255, 75, 75, 0.1); /* Subtle red tint */
+        border-color: #FF4B4B;
+        box-shadow: 0 0 10px rgba(255, 75, 75, 0.2);
+    }
+    
+    /* Selected text color */
+    [data-testid="stRadio"] label:has(input:checked) p {
+        color: #FF4B4B;
+        font-weight: 600;
+    }
+
+    /* Hide the default radio circle */
+    [data-testid="stRadio"] label div[role="radio"] {
+        display: none;
+    }
+    
+    /* Ensure text is centered and looks good */
+    [data-testid="stRadio"] p {
+        font-size: 16px;
+        margin: 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Sidebar controls
 logo_path = os.path.join(os.path.dirname(__file__), "logo_transparent.png")
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, use_container_width=True)
 
 st.sidebar.header("Navigation")
-app_mode = st.sidebar.radio("Choose a section:", ["Home", "Market Analysis", "Strategy Simulator"])
+app_mode = st.sidebar.radio("Choose a section:", ["Home", "Market Analysis"])
 
 # Load data
 @st.cache_data(ttl=3600)
