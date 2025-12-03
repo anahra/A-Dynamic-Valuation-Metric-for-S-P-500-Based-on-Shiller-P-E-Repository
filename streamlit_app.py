@@ -32,7 +32,7 @@ st.markdown("""
     }
 
     /* Style each option label */
-    [data-testid="stRadio"] label {
+    [data-testid="stRadio"] div[role="radiogroup"] label {
         background-color: #0E1117; /* Match sidebar background or slightly lighter */
         padding: 10px 15px;
         border-radius: 8px;
@@ -46,7 +46,7 @@ st.markdown("""
     }
 
     /* Hover effect */
-    [data-testid="stRadio"] label:hover {
+    [data-testid="stRadio"] div[role="radiogroup"] label:hover {
         background-color: rgba(255, 255, 255, 0.05);
         border-color: rgba(255, 255, 255, 0.3);
     }
@@ -84,8 +84,8 @@ logo_path = os.path.join(os.path.dirname(__file__), "logo_transparent.png")
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, use_container_width=True)
 
-st.sidebar.header("Navigation")
-app_mode = st.sidebar.radio("Tabs", ["Home", "Market Analysis"])
+st.sidebar.subheader("Tabs")
+app_mode = st.sidebar.radio("Navigation", ["Home", "Market Analysis"], label_visibility="collapsed")
 
 # Load data
 @st.cache_data(ttl=3600)
