@@ -64,15 +64,17 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* Hide the default radio circle */
-    [data-testid="stRadio"] label div[role="radio"] {
-        display: none;
+    /* Hide the default radio circle - Aggressive selector */
+    [data-testid="stRadio"] label > div:first-child {
+        display: none !important;
     }
     
     /* Ensure text is centered and looks good */
     [data-testid="stRadio"] p {
         font-size: 16px;
         margin: 0;
+        text-align: center;
+        width: 100%;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -83,7 +85,7 @@ if os.path.exists(logo_path):
     st.sidebar.image(logo_path, use_container_width=True)
 
 st.sidebar.header("Navigation")
-app_mode = st.sidebar.radio("Choose a section:", ["Home", "Market Analysis"])
+app_mode = st.sidebar.radio("Tabs", ["Home", "Market Analysis"])
 
 # Load data
 @st.cache_data(ttl=3600)
