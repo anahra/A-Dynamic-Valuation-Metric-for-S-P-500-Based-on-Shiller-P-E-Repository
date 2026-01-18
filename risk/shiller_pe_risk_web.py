@@ -104,7 +104,7 @@ def plot_charts(data):
     )    # Create second chart: Historical stats
     fig2 = go.Figure()
     fig2.add_trace(go.Scatter(x=data['Date'], y=data['PE_Ratio'], mode='lines', name='Shiller P/E Ratio', line=dict(color='blue'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
-    fig2.add_trace(go.Scatter(x=data['Date'], y=data['Historical_Avg'], mode='lines', name='Historical Average', line=dict(color='black', dash='dash'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
+    fig2.add_trace(go.Scatter(x=data['Date'], y=data['Historical_Avg'], mode='lines', name='Historical Average', line=dict(color='white', dash='dash'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     fig2.add_trace(go.Scatter(x=data['Date'], y=data['Historical_Upper'], mode='lines', name='Historical Avg + 2 Std Dev', line=dict(color='red', dash='dash'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     fig2.add_trace(go.Scatter(x=data['Date'], y=data['Historical_Lower'], mode='lines', name='Historical Avg - 2 Std Dev', line=dict(color='green', dash='dash'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     fig2.update_layout(
