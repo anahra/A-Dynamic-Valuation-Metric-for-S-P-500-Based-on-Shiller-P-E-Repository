@@ -78,7 +78,7 @@ def plot_charts(data):
             xanchor="right",
             x=1,
             font=dict(size=14),
-            bgcolor='rgba(255,255,255,0.8)' # Semi-transparent white
+            # bgcolor='rgba(255,255,255,0.8)' # Removed for dark mode compatibility
         )
     )
 
