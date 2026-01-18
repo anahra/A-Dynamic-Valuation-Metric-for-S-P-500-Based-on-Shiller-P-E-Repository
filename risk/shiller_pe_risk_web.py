@@ -299,8 +299,9 @@ def plot_correlation_charts(data):
     else:
         title_suffix_pe = ""
 
+
     fig2.update_layout(
-        title=f'10-Year Annualized Return vs. Shiller P/E Ratio{title_suffix_pe}',
+        title=f'10-Year Annualized Return vs. Shiller P/E Ratio (Monthly Data){title_suffix_pe}',
         xaxis_title='Shiller P/E Ratio',
         yaxis_title='10-Year Annualized Return',
         yaxis=dict(tickformat='.1%'),
@@ -308,4 +309,101 @@ def plot_correlation_charts(data):
         **chart_settings
     )
 
-    return [fig1, fig2]
+    # --- Yearly Analysis ---
+    # Resample to Yearly frequency, taking the mean of values
+    yearly_data = data.copy()
+    yearly_data.set_index('Date', inplace=True)
+    yearly_data = yearly_data.resample('YE').mean() # Average of the year
+    yearly_data.reset_index(inplace=True)
+    
+    # Compute 10Y Returns for Yearly Data (shift by 10 rows/years)
+    yearly_data['S&P_500_Future'] = yearly_data['S&P_500'].shift(-10)
+    yearly_data['10Y_Return'] = (yearly_data['S&P_500_Future'] / yearly_data['S&P_500']) ** (1/10) - 1
+    
+    corr_yearly = yearly_data.dropna(subset=['10Y_Return']).copy()
+    
+    # 3. Yearly 10Y Return vs Risk
+    fig3 = go.Figure()
+    fig3.add_trace(go.Scatter(
+        x=corr_yearly['Risk'],
+        y=corr_yearly['10Y_Return'],
+        mode='markers',
+        marker=dict(
+            size=10, # Larger markers for yearly
+            color=corr_yearly['Date'].dt.year,
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Year")
+        ),
+        text=corr_yearly['Date'].dt.year,
+        hovertemplate='Year: %{text}<br>Avg Risk: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+    ))
+    
+    # Yearly Trendline
+    idx_y = np.isfinite(corr_yearly['Risk']) & np.isfinite(corr_yearly['10Y_Return'])
+    if idx_y.sum() > 1:
+        m_y, b_y = np.polyfit(corr_yearly.loc[idx_y, 'Risk'], corr_yearly.loc[idx_y, '10Y_Return'], 1)
+        x_range_y = np.linspace(corr_yearly['Risk'].min(), corr_yearly['Risk'].max(), 100)
+        y_range_y = m_y * x_range_y + b_y
+        
+        fig3.add_trace(go.Scatter(
+            x=x_range_y, y=y_range_y, mode='lines', name='Trendline',
+            line=dict(color='red', width=2, dash='dash')
+        ))
+        corr_coef_y = corr_yearly.loc[idx_y, 'Risk'].corr(corr_yearly.loc[idx_y, '10Y_Return'])
+        title_suffix_y = f" (Correlation: {corr_coef_y:.2f})"
+    else:
+        title_suffix_y = ""
+        
+    fig3.update_layout(
+        title=f'10-Year Annualized Return vs. Yearly Avg Risk{title_suffix_y}',
+        xaxis_title='Average Risk Metric (Yearly)',
+        yaxis_title='10-Year Annualized Return',
+        yaxis=dict(tickformat='.1%'),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        **chart_settings
+    )
+
+    # 4. Yearly 10Y Return vs P/E
+    fig4 = go.Figure()
+    fig4.add_trace(go.Scatter(
+        x=corr_yearly['PE_Ratio'],
+        y=corr_yearly['10Y_Return'],
+        mode='markers',
+        marker=dict(
+            size=10, 
+            color=corr_yearly['Date'].dt.year,
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Year")
+        ),
+        text=corr_yearly['Date'].dt.year,
+        hovertemplate='Year: %{text}<br>Avg Shiller P/E: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+    ))
+    
+    # Yearly Trendline (PE)
+    idx_pe_y = np.isfinite(corr_yearly['PE_Ratio']) & np.isfinite(corr_yearly['10Y_Return'])
+    if idx_pe_y.sum() > 1:
+        m_pe_y, b_pe_y = np.polyfit(corr_yearly.loc[idx_pe_y, 'PE_Ratio'], corr_yearly.loc[idx_pe_y, '10Y_Return'], 1)
+        x_range_pe_y = np.linspace(corr_yearly['PE_Ratio'].min(), corr_yearly['PE_Ratio'].max(), 100)
+        y_range_pe_y = m_pe_y * x_range_pe_y + b_pe_y
+        
+        fig4.add_trace(go.Scatter(
+            x=x_range_pe_y, y=y_range_pe_y, mode='lines', name='Trendline',
+            line=dict(color='red', width=2, dash='dash')
+        ))
+        corr_coef_pe_y = corr_yearly.loc[idx_pe_y, 'PE_Ratio'].corr(corr_yearly.loc[idx_pe_y, '10Y_Return'])
+        title_suffix_pe_y = f" (Correlation: {corr_coef_pe_y:.2f})"
+    else:
+        title_suffix_pe_y = ""
+
+    fig4.update_layout(
+        title=f'10-Year Annualized Return vs. Yearly Avg Shiller P/E{title_suffix_pe_y}',
+        xaxis_title='Average Shiller P/E Ratio (Yearly)',
+        yaxis_title='10-Year Annualized Return',
+        yaxis=dict(tickformat='.1%'),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        **chart_settings
+    )
+
+    return [fig1, fig2, fig3, fig4]

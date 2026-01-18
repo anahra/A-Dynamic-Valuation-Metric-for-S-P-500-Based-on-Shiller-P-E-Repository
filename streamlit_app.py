@@ -195,9 +195,23 @@ elif app_mode == "Market Analysis":
         
         col1, col2 = st.columns(2)
         with col1:
-            st.plotly_chart(corr_figs[0], use_container_width=True, key="corr_risk")
+            st.markdown("#### Monthly Data Points")
+            st.plotly_chart(corr_figs[0], use_container_width=True, key="corr_risk_monthly")
         with col2:
-            st.plotly_chart(corr_figs[1], use_container_width=True, key="corr_pe")
+            st.markdown("#### Monthly Data Points")
+            st.plotly_chart(corr_figs[1], use_container_width=True, key="corr_pe_monthly")
+            
+        st.divider()
+        
+        col3, col4 = st.columns(2)
+        with col3:
+            st.markdown("#### Yearly Averaged Data")
+            st.caption("Data is averaged annually (mean Risk/PE/Price for the year) to reduce noise.")
+            st.plotly_chart(corr_figs[2], use_container_width=True, key="corr_risk_yearly")
+        with col4:
+            st.markdown("#### Yearly Averaged Data")
+            st.caption("Data is averaged annually (mean Risk/PE/Price for the year) to reduce noise.")
+            st.plotly_chart(corr_figs[3], use_container_width=True, key="corr_pe_yearly")
 
 elif app_mode == "Strategy Simulator":
     st.sidebar.markdown("---")
