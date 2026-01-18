@@ -60,22 +60,26 @@ def plot_charts(data):
         xaxis=dict(
             tickformat='%Y',  # Show only years
             tickangle=0,      # Horizontal labels
-            title_font=dict(size=32, color='#CCCCCC'),  # Increased axis title
-            tickfont=dict(size=24, color='#CCCCCC'),  # Increased tick labels
+            title_font=dict(size=32, color='#333333'),  # Darker for readability
+            tickfont=dict(size=24, color='#333333'),  # Darker for readability
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.1)'
         ),
         yaxis=dict(
-            title_font=dict(size=20, color='#CCCCCC'),  # Axis title
-            tickfont=dict(size=16, color='#CCCCCC'),  # Tick labels
+            title_font=dict(size=20, color='#333333'),  # Darker for readability
+            tickfont=dict(size=16, color='#333333'),  # Darker for readability
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.1)'
         ),
-        title_font=dict(size=36, color='#555555'),  # Lighter title color
+        title_font=dict(size=36, color='#333333'),  # Darker title color
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=14),
-            bgcolor='rgba(0,0,0,0)' # Transparent background
+            font=dict(size=14, color='#333333'),
+            bgcolor='rgba(255,255,255,0.8)' # Semi-transparent white
         )
     )
 
@@ -89,13 +93,13 @@ def plot_charts(data):
     fig1.update_layout(
         title='Shiller P/E Ratio and S&P 500 (Nominal Values)',
         xaxis_title='Date',
-        yaxis_title=dict(text='P/E Ratio', font=dict(size=16)),
+        yaxis_title=dict(text='P/E Ratio', font=dict(size=16, color='#333333')),
         yaxis2=dict(
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16, color='#CCCCCC')),
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16, color='#333333')),
             overlaying='y',
             side='right',
             type='log',
-            tickfont=dict(color='#CCCCCC')
+            tickfont=dict(color='#333333')
         ),
         **chart_settings
     )    # Create second chart: Historical stats
@@ -107,7 +111,7 @@ def plot_charts(data):
     fig2.update_layout(
         title='Historical Shiller P/E Ratio with Mean and Std Dev',
         xaxis_title='Date',
-        yaxis_title=dict(text='P/E Ratio', font=dict(size=16)),
+        yaxis_title=dict(text='P/E Ratio', font=dict(size=16, color='#333333')),
         **chart_settings
     )
 
@@ -120,8 +124,8 @@ def plot_charts(data):
             colorscale='Jet',  # Jet, reversed
             showscale=True, 
             colorbar=dict(
-                title=dict(text='Risk', font=dict(size=32)),
-                tickfont=dict(size=24)
+                title=dict(text='Risk', font=dict(size=32, color='#333333')),
+                tickfont=dict(size=24, color='#333333')
             )
         ), 
         text=[f"Date: {d.strftime('%d %b %Y')}<br>Risk: {r:.2f}" for d, r in zip(data['Date'], data['Risk'])], 
@@ -132,8 +136,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=20, color='#CCCCCC')),
-            tickfont=dict(size=16, color='#CCCCCC')
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=20, color='#333333')),
+            tickfont=dict(size=16, color='#333333')
         )
     })
     
@@ -152,8 +156,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='P/E Ratio (Log Scale)', font=dict(size=20, color='#CCCCCC')),
-            tickfont=dict(size=16, color='#CCCCCC')
+            title=dict(text='P/E Ratio (Log Scale)', font=dict(size=20, color='#333333')),
+            tickfont=dict(size=16, color='#333333')
         )
     })
     
@@ -194,30 +198,53 @@ def compute_forward_returns(data, years=10):
     
     return data
 
-def plot_correlation_charts(data):
+def plot_correlation_charts(data, start_year=1950, return_years=10):
     """
-    Plots scatter plots for 10Y Forward Return vs Risk and vs P/E Ratio.
+    Plots scatter plots for N-Year Forward Return vs Risk and vs P/E Ratio.
     """
-    # Compute returns if not present
-    if '10Y_Return' not in data.columns:
-        data = compute_forward_returns(data)
+    # Filter data based on start_year
+    data = data[data['Date'].dt.year >= start_year].copy()
+
+    # Compute returns based on selected period
+    # We'll calculate a specific column for this period
+    data = compute_forward_returns(data, years=return_years)
+    return_col = f'{return_years}Y_Return'
     
-    # Filter out NaN values (the most recent 10 years won't have future returns)
-    corr_data = data.dropna(subset=['10Y_Return']).copy()
+    # Filter out NaN values (the most recent N years won't have future returns)
+    corr_data = data.dropna(subset=[return_col]).copy()
     
     # Common settings from plot_charts but customized
     chart_settings = dict(
         template="plotly_white",
         height=600,
         font=dict(size=14, color='black'),
-        title_font=dict(size=24, color='#333333'),
+        title_font=dict(size=24, color='#333333'), # Darker title
+        xaxis=dict(
+            title_font=dict(size=18, color='#333333'),
+            tickfont=dict(size=14, color='#333333'),
+        ),
+        # Removed yaxis from here to avoid collision, will handle per chart
+        legend=dict(
+            orientation="h", 
+            yanchor="bottom", 
+            y=1.02, 
+            xanchor="right", 
+            x=1
+        )
     )
     
-    # 1. 10Y Return vs Risk
+    # Base Y-Axis settings
+    base_yaxis = dict(
+        title_font=dict(size=18, color='#333333'),
+        tickfont=dict(size=14, color='#333333'),
+        tickformat='.1%' 
+    )
+
+    # 1. Return vs Risk
     fig1 = go.Figure()
     fig1.add_trace(go.Scatter(
         x=corr_data['Risk'],
-        y=corr_data['10Y_Return'],
+        y=corr_data[return_col],
         mode='markers',
         marker=dict(
             size=6,
@@ -227,46 +254,39 @@ def plot_correlation_charts(data):
             colorbar=dict(title="Year")
         ),
         text=corr_data['Date'].dt.strftime('%b %Y'),
-        hovertemplate='Date: %{text}<br>Risk: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+        hovertemplate=f'Date: %{{text}}<br>Risk: %{{x:.2f}}<br>{return_years}Y Ann. Return: %{{y:.1%}}<extra></extra>'
     ))
     
     # Add trendline (Linear Regression)
-    # Using numpy for simple linear regression
-    idx = np.isfinite(corr_data['Risk']) & np.isfinite(corr_data['10Y_Return'])
+    idx = np.isfinite(corr_data['Risk']) & np.isfinite(corr_data[return_col])
     if idx.sum() > 1:
-        m, b = np.polyfit(corr_data.loc[idx, 'Risk'], corr_data.loc[idx, '10Y_Return'], 1)
-        # Create line points
+        m, b = np.polyfit(corr_data.loc[idx, 'Risk'], corr_data.loc[idx, return_col], 1)
         x_range = np.linspace(corr_data['Risk'].min(), corr_data['Risk'].max(), 100)
         y_range = m * x_range + b
         
         fig1.add_trace(go.Scatter(
-            x=x_range,
-            y=y_range,
-            mode='lines',
-            name='Trendline',
+            x=x_range, y=y_range, mode='lines', name='Trendline',
             line=dict(color='red', width=2, dash='dash')
         ))
         
-        # Calculate Correlation Coefficient
-        correlation = corr_data.loc[idx, 'Risk'].corr(corr_data.loc[idx, '10Y_Return'])
+        correlation = corr_data.loc[idx, 'Risk'].corr(corr_data.loc[idx, return_col])
         title_suffix = f" (Correlation: {correlation:.2f})"
     else:
         title_suffix = ""
 
     fig1.update_layout(
-        title=f'10-Year Annualized Return vs. Risk Metric{title_suffix}',
+        title=f'{return_years}-Year Annualized Return vs. Risk Metric{title_suffix}',
         xaxis_title='Risk Metric (0=Undervalued, 1=Overvalued)',
-        yaxis_title='10-Year Annualized Return',
-        yaxis=dict(tickformat='.1%'),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis_title=f'{return_years}-Year Annualized Return',
+        yaxis=base_yaxis,
         **chart_settings
     )
 
-    # 2. 10Y Return vs P/E Ratio
+    # 2. Return vs P/E Ratio
     fig2 = go.Figure()
     fig2.add_trace(go.Scatter(
         x=corr_data['PE_Ratio'],
-        y=corr_data['10Y_Return'],
+        y=corr_data[return_col],
         mode='markers',
         marker=dict(
             size=6,
@@ -276,36 +296,31 @@ def plot_correlation_charts(data):
             colorbar=dict(title="Year")
         ),
         text=corr_data['Date'].dt.strftime('%b %Y'),
-        hovertemplate='Date: %{text}<br>Shiller P/E: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+        hovertemplate=f'Date: %{{text}}<br>Shiller P/E: %{{x:.2f}}<br>{return_years}Y Ann. Return: %{{y:.1%}}<extra></extra>'
     ))
 
     # Add trendline
-    idx_pe = np.isfinite(corr_data['PE_Ratio']) & np.isfinite(corr_data['10Y_Return'])
+    idx_pe = np.isfinite(corr_data['PE_Ratio']) & np.isfinite(corr_data[return_col])
     if idx_pe.sum() > 1:
-        m_pe, b_pe = np.polyfit(corr_data.loc[idx_pe, 'PE_Ratio'], corr_data.loc[idx_pe, '10Y_Return'], 1)
+        m_pe, b_pe = np.polyfit(corr_data.loc[idx_pe, 'PE_Ratio'], corr_data.loc[idx_pe, return_col], 1)
         x_range_pe = np.linspace(corr_data['PE_Ratio'].min(), corr_data['PE_Ratio'].max(), 100)
         y_range_pe = m_pe * x_range_pe + b_pe
 
         fig2.add_trace(go.Scatter(
-            x=x_range_pe,
-            y=y_range_pe,
-            mode='lines',
-            name='Trendline',
+            x=x_range_pe, y=y_range_pe, mode='lines', name='Trendline',
             line=dict(color='red', width=2, dash='dash')
         ))
         
-        correlation_pe = corr_data.loc[idx_pe, 'PE_Ratio'].corr(corr_data.loc[idx_pe, '10Y_Return'])
+        correlation_pe = corr_data.loc[idx_pe, 'PE_Ratio'].corr(corr_data.loc[idx_pe, return_col])
         title_suffix_pe = f" (Correlation: {correlation_pe:.2f})"
     else:
         title_suffix_pe = ""
 
-
     fig2.update_layout(
-        title=f'10-Year Annualized Return vs. Shiller P/E Ratio (Monthly Data){title_suffix_pe}',
+        title=f'{return_years}-Year Annualized Return vs. Shiller P/E Ratio (Monthly Data){title_suffix_pe}',
         xaxis_title='Shiller P/E Ratio',
-        yaxis_title='10-Year Annualized Return',
-        yaxis=dict(tickformat='.1%'),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis_title=f'{return_years}-Year Annualized Return',
+        yaxis=base_yaxis,
         **chart_settings
     )
 
@@ -316,17 +331,17 @@ def plot_correlation_charts(data):
     yearly_data = yearly_data.resample('YE').mean() # Average of the year
     yearly_data.reset_index(inplace=True)
     
-    # Compute 10Y Returns for Yearly Data (shift by 10 rows/years)
-    yearly_data['S&P_500_Future'] = yearly_data['S&P_500'].shift(-10)
-    yearly_data['10Y_Return'] = (yearly_data['S&P_500_Future'] / yearly_data['S&P_500']) ** (1/10) - 1
+    # Compute Returns for Yearly Data (shift by N rows/years)
+    yearly_data['S&P_500_Future'] = yearly_data['S&P_500'].shift(-return_years)
+    yearly_data[return_col] = (yearly_data['S&P_500_Future'] / yearly_data['S&P_500']) ** (1/return_years) - 1
     
-    corr_yearly = yearly_data.dropna(subset=['10Y_Return']).copy()
+    corr_yearly = yearly_data.dropna(subset=[return_col]).copy()
     
-    # 3. Yearly 10Y Return vs Risk
+    # 3. Yearly Return vs Risk
     fig3 = go.Figure()
     fig3.add_trace(go.Scatter(
         x=corr_yearly['Risk'],
-        y=corr_yearly['10Y_Return'],
+        y=corr_yearly[return_col],
         mode='markers',
         marker=dict(
             size=10, # Larger markers for yearly
@@ -336,13 +351,13 @@ def plot_correlation_charts(data):
             colorbar=dict(title="Year")
         ),
         text=corr_yearly['Date'].dt.year,
-        hovertemplate='Year: %{text}<br>Avg Risk: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+        hovertemplate=f'Year: %{{text}}<br>Avg Risk: %{{x:.2f}}<br>{return_years}Y Ann. Return: %{{y:.1%}}<extra></extra>'
     ))
     
     # Yearly Trendline
-    idx_y = np.isfinite(corr_yearly['Risk']) & np.isfinite(corr_yearly['10Y_Return'])
+    idx_y = np.isfinite(corr_yearly['Risk']) & np.isfinite(corr_yearly[return_col])
     if idx_y.sum() > 1:
-        m_y, b_y = np.polyfit(corr_yearly.loc[idx_y, 'Risk'], corr_yearly.loc[idx_y, '10Y_Return'], 1)
+        m_y, b_y = np.polyfit(corr_yearly.loc[idx_y, 'Risk'], corr_yearly.loc[idx_y, return_col], 1)
         x_range_y = np.linspace(corr_yearly['Risk'].min(), corr_yearly['Risk'].max(), 100)
         y_range_y = m_y * x_range_y + b_y
         
@@ -350,25 +365,24 @@ def plot_correlation_charts(data):
             x=x_range_y, y=y_range_y, mode='lines', name='Trendline',
             line=dict(color='red', width=2, dash='dash')
         ))
-        corr_coef_y = corr_yearly.loc[idx_y, 'Risk'].corr(corr_yearly.loc[idx_y, '10Y_Return'])
+        corr_coef_y = corr_yearly.loc[idx_y, 'Risk'].corr(corr_yearly.loc[idx_y, return_col])
         title_suffix_y = f" (Correlation: {corr_coef_y:.2f})"
     else:
         title_suffix_y = ""
         
     fig3.update_layout(
-        title=f'10-Year Annualized Return vs. Yearly Avg Risk{title_suffix_y}',
+        title=f'{return_years}-Year Annualized Return vs. Yearly Avg Risk{title_suffix_y}',
         xaxis_title='Average Risk Metric (Yearly)',
-        yaxis_title='10-Year Annualized Return',
-        yaxis=dict(tickformat='.1%'),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis_title=f'{return_years}-Year Annualized Return',
+        yaxis=base_yaxis,
         **chart_settings
     )
 
-    # 4. Yearly 10Y Return vs P/E
+    # 4. Yearly Return vs P/E
     fig4 = go.Figure()
     fig4.add_trace(go.Scatter(
         x=corr_yearly['PE_Ratio'],
-        y=corr_yearly['10Y_Return'],
+        y=corr_yearly[return_col],
         mode='markers',
         marker=dict(
             size=10, 
@@ -378,13 +392,13 @@ def plot_correlation_charts(data):
             colorbar=dict(title="Year")
         ),
         text=corr_yearly['Date'].dt.year,
-        hovertemplate='Year: %{text}<br>Avg Shiller P/E: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+        hovertemplate=f'Year: %{{text}}<br>Avg Shiller P/E: %{{x:.2f}}<br>{return_years}Y Ann. Return: %{{y:.1%}}<extra></extra>'
     ))
     
     # Yearly Trendline (PE)
-    idx_pe_y = np.isfinite(corr_yearly['PE_Ratio']) & np.isfinite(corr_yearly['10Y_Return'])
+    idx_pe_y = np.isfinite(corr_yearly['PE_Ratio']) & np.isfinite(corr_yearly[return_col])
     if idx_pe_y.sum() > 1:
-        m_pe_y, b_pe_y = np.polyfit(corr_yearly.loc[idx_pe_y, 'PE_Ratio'], corr_yearly.loc[idx_pe_y, '10Y_Return'], 1)
+        m_pe_y, b_pe_y = np.polyfit(corr_yearly.loc[idx_pe_y, 'PE_Ratio'], corr_yearly.loc[idx_pe_y, return_col], 1)
         x_range_pe_y = np.linspace(corr_yearly['PE_Ratio'].min(), corr_yearly['PE_Ratio'].max(), 100)
         y_range_pe_y = m_pe_y * x_range_pe_y + b_pe_y
         
@@ -392,17 +406,16 @@ def plot_correlation_charts(data):
             x=x_range_pe_y, y=y_range_pe_y, mode='lines', name='Trendline',
             line=dict(color='red', width=2, dash='dash')
         ))
-        corr_coef_pe_y = corr_yearly.loc[idx_pe_y, 'PE_Ratio'].corr(corr_yearly.loc[idx_pe_y, '10Y_Return'])
+        corr_coef_pe_y = corr_yearly.loc[idx_pe_y, 'PE_Ratio'].corr(corr_yearly.loc[idx_pe_y, return_col])
         title_suffix_pe_y = f" (Correlation: {corr_coef_pe_y:.2f})"
     else:
         title_suffix_pe_y = ""
 
     fig4.update_layout(
-        title=f'10-Year Annualized Return vs. Yearly Avg Shiller P/E{title_suffix_pe_y}',
+        title=f'{return_years}-Year Annualized Return vs. Yearly Avg Shiller P/E{title_suffix_pe_y}',
         xaxis_title='Average Shiller P/E Ratio (Yearly)',
-        yaxis_title='10-Year Annualized Return',
-        yaxis=dict(tickformat='.1%'),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis_title=f'{return_years}-Year Annualized Return',
+        yaxis=base_yaxis,
         **chart_settings
     )
 

@@ -182,16 +182,39 @@ elif app_mode == "Market Analysis":
         st.caption("Shiller P/E ratio compared to its historical average and ±2 standard deviation bands.")
 
     with tab5:
-        st.header("10-Year Forward Return Analysis")
+        st.header("Forward Return Analysis")
         st.markdown("""
-        This section analyzes the relationship between current valuation metrics (Risk and Shiller P/E) and the subsequent **10-year annualized return** of the S&P 500.
+        This section analyzes the relationship between current valuation metrics (Risk and Shiller P/E) and the subsequent **annualized return** of the S&P 500.
         
-        *   **Forward Return**: Calculated as the annualized price return over the *next* 10 years from any given month.
-        *   **Interpretation**: Strong negative correlation implies that high starting valuations (High Risk, High P/E) tend to result in lower future returns.
+        Use the controls below to customize the analysis period and return horizon.
         """)
         
+        # Controls for Analysis
+        col_ctrl1, col_ctrl2 = st.columns(2)
+        
+        with col_ctrl1:
+            start_year_corr = st.slider(
+                "Start Analysis From Year", 
+                min_value=1900, 
+                max_value=2015, 
+                value=1950, 
+                step=5,
+                key="corr_start_year"
+            )
+            
+        with col_ctrl2:
+            return_horizon = st.selectbox(
+                "Return Horizon (Years)",
+                options=[1, 3, 5, 10, 20],
+                index=3, # Default to 10
+                format_func=lambda x: f"{x} Years",
+                key="corr_horizon"
+            )
+        
+        st.markdown(f"### {return_horizon}-Year Annualized Return Correlations (since {start_year_corr})")
+
         with st.spinner("Computing correlation analysis..."):
-            corr_figs = plot_correlation_charts(risk_data)
+            corr_figs = plot_correlation_charts(risk_data, start_year=start_year_corr, return_years=return_horizon)
         
         col1, col2 = st.columns(2)
         with col1:
