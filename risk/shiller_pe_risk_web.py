@@ -193,8 +193,9 @@ def compute_forward_returns(data, years=10):
     data['S&P_500_Future'] = data['S&P_500'].shift(-months)
     
     # Calculate annualized return: (P_future / P_current)^(1/years) - 1
+    # Calculate annualized return: (P_future / P_current)^(1/years) - 1
     # We use (1/years) because it's annualized
-    data['10Y_Return'] = (data['S&P_500_Future'] / data['S&P_500']) ** (1/years) - 1
+    data[f'{years}Y_Return'] = (data['S&P_500_Future'] / data['S&P_500']) ** (1/years) - 1
     
     return data
 
