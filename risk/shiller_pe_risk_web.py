@@ -54,6 +54,7 @@ def compute_risk(data_pe, data_sp500, rolling_window_upper=300, rolling_window_l
 def plot_charts(data):
     # Common chart settings
     chart_settings = dict(
+        height=800,
         font=dict(size=24),  # Increased base font size
         xaxis=dict(
             tickformat='%Y',  # Show only years
@@ -214,6 +215,7 @@ def plot_correlation_charts(data, start_year=1950, return_years=10):
     
     # Common settings from plot_charts but customized
     chart_settings = dict(
+        height=600,
         font=dict(size=14),
         title_font=dict(size=24), # Darker title
         xaxis=dict(
