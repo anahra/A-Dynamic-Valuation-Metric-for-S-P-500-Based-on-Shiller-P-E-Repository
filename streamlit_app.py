@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.dirname(__file__))
 
 from data.shiller_pe_loader import load_shiller_pe
-from risk.shiller_pe_risk_web import compute_risk, plot_charts
+from risk.shiller_pe_risk_web import compute_risk, plot_charts, plot_correlation_charts
 from strategies.strat_test_web import run_strategy, plot_strategy_results
 from strategies.analyze_performance import analyze_by_decades
 from strategies.analyze_sharpe_ratio import analyze_risk_adjusted_returns
@@ -163,7 +163,7 @@ elif app_mode == "Market Analysis":
     risk_figs = plot_charts(risk_data)
     
     # Tabs for full-screen graphs
-    tab1, tab2, tab3, tab4 = st.tabs(["Risk Analysis", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Risk Analysis", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics", "Correlation Analysis"])
     
     with tab1:
         st.plotly_chart(risk_figs[2], use_container_width=True, key="risk_analysis")
@@ -180,6 +180,24 @@ elif app_mode == "Market Analysis":
     with tab4:
         st.plotly_chart(risk_figs[1], use_container_width=True, key="historical_stats")
         st.caption("Shiller P/E ratio compared to its historical average and ±2 standard deviation bands.")
+
+    with tab5:
+        st.header("10-Year Forward Return Analysis")
+        st.markdown("""
+        This section analyzes the relationship between current valuation metrics (Risk and Shiller P/E) and the subsequent **10-year annualized return** of the S&P 500.
+        
+        *   **Forward Return**: Calculated as the annualized price return over the *next* 10 years from any given month.
+        *   **Interpretation**: Strong negative correlation implies that high starting valuations (High Risk, High P/E) tend to result in lower future returns.
+        """)
+        
+        with st.spinner("Computing correlation analysis..."):
+            corr_figs = plot_correlation_charts(risk_data)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(corr_figs[0], use_container_width=True, key="corr_risk")
+        with col2:
+            st.plotly_chart(corr_figs[1], use_container_width=True, key="corr_pe")
 
 elif app_mode == "Strategy Simulator":
     st.sidebar.markdown("---")

@@ -172,7 +172,140 @@ if __name__ == "__main__":
     # Compute the risk
     risk_data = compute_risk(data_pe, data_sp500)
 
+
     # Plot the charts
     figs = plot_charts(risk_data)
     for fig in figs:
         fig.show()
+
+def compute_forward_returns(data, years=10):
+    """
+    Computes the N-year forward annualized price return.
+    """
+    data = data.copy()
+    months = years * 12
+    # Shift future price back to current row
+    # S&P_500 is nominal price
+    data['S&P_500_Future'] = data['S&P_500'].shift(-months)
+    
+    # Calculate annualized return: (P_future / P_current)^(1/years) - 1
+    # We use (1/years) because it's annualized
+    data['10Y_Return'] = (data['S&P_500_Future'] / data['S&P_500']) ** (1/years) - 1
+    
+    return data
+
+def plot_correlation_charts(data):
+    """
+    Plots scatter plots for 10Y Forward Return vs Risk and vs P/E Ratio.
+    """
+    # Compute returns if not present
+    if '10Y_Return' not in data.columns:
+        data = compute_forward_returns(data)
+    
+    # Filter out NaN values (the most recent 10 years won't have future returns)
+    corr_data = data.dropna(subset=['10Y_Return']).copy()
+    
+    # Common settings from plot_charts but customized
+    chart_settings = dict(
+        template="plotly_white",
+        height=600,
+        font=dict(size=14, color='black'),
+        title_font=dict(size=24, color='#333333'),
+    )
+    
+    # 1. 10Y Return vs Risk
+    fig1 = go.Figure()
+    fig1.add_trace(go.Scatter(
+        x=corr_data['Risk'],
+        y=corr_data['10Y_Return'],
+        mode='markers',
+        marker=dict(
+            size=6,
+            color=corr_data['Date'].dt.year, # Color by year
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Year")
+        ),
+        text=corr_data['Date'].dt.strftime('%b %Y'),
+        hovertemplate='Date: %{text}<br>Risk: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+    ))
+    
+    # Add trendline (Linear Regression)
+    # Using numpy for simple linear regression
+    idx = np.isfinite(corr_data['Risk']) & np.isfinite(corr_data['10Y_Return'])
+    if idx.sum() > 1:
+        m, b = np.polyfit(corr_data.loc[idx, 'Risk'], corr_data.loc[idx, '10Y_Return'], 1)
+        # Create line points
+        x_range = np.linspace(corr_data['Risk'].min(), corr_data['Risk'].max(), 100)
+        y_range = m * x_range + b
+        
+        fig1.add_trace(go.Scatter(
+            x=x_range,
+            y=y_range,
+            mode='lines',
+            name='Trendline',
+            line=dict(color='red', width=2, dash='dash')
+        ))
+        
+        # Calculate Correlation Coefficient
+        correlation = corr_data.loc[idx, 'Risk'].corr(corr_data.loc[idx, '10Y_Return'])
+        title_suffix = f" (Correlation: {correlation:.2f})"
+    else:
+        title_suffix = ""
+
+    fig1.update_layout(
+        title=f'10-Year Annualized Return vs. Risk Metric{title_suffix}',
+        xaxis_title='Risk Metric (0=Undervalued, 1=Overvalued)',
+        yaxis_title='10-Year Annualized Return',
+        yaxis=dict(tickformat='.1%'),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        **chart_settings
+    )
+
+    # 2. 10Y Return vs P/E Ratio
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(
+        x=corr_data['PE_Ratio'],
+        y=corr_data['10Y_Return'],
+        mode='markers',
+        marker=dict(
+            size=6,
+            color=corr_data['Date'].dt.year,
+            colorscale='Viridis',
+            showscale=True,
+            colorbar=dict(title="Year")
+        ),
+        text=corr_data['Date'].dt.strftime('%b %Y'),
+        hovertemplate='Date: %{text}<br>Shiller P/E: %{x:.2f}<br>10Y Ann. Return: %{y:.1%}<extra></extra>'
+    ))
+
+    # Add trendline
+    idx_pe = np.isfinite(corr_data['PE_Ratio']) & np.isfinite(corr_data['10Y_Return'])
+    if idx_pe.sum() > 1:
+        m_pe, b_pe = np.polyfit(corr_data.loc[idx_pe, 'PE_Ratio'], corr_data.loc[idx_pe, '10Y_Return'], 1)
+        x_range_pe = np.linspace(corr_data['PE_Ratio'].min(), corr_data['PE_Ratio'].max(), 100)
+        y_range_pe = m_pe * x_range_pe + b_pe
+
+        fig2.add_trace(go.Scatter(
+            x=x_range_pe,
+            y=y_range_pe,
+            mode='lines',
+            name='Trendline',
+            line=dict(color='red', width=2, dash='dash')
+        ))
+        
+        correlation_pe = corr_data.loc[idx_pe, 'PE_Ratio'].corr(corr_data.loc[idx_pe, '10Y_Return'])
+        title_suffix_pe = f" (Correlation: {correlation_pe:.2f})"
+    else:
+        title_suffix_pe = ""
+
+    fig2.update_layout(
+        title=f'10-Year Annualized Return vs. Shiller P/E Ratio{title_suffix_pe}',
+        xaxis_title='Shiller P/E Ratio',
+        yaxis_title='10-Year Annualized Return',
+        yaxis=dict(tickformat='.1%'),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        **chart_settings
+    )
+
+    return [fig1, fig2]
