@@ -54,31 +54,29 @@ def compute_risk(data_pe, data_sp500, rolling_window_upper=300, rolling_window_l
 def plot_charts(data):
     # Common chart settings
     chart_settings = dict(
-        template="plotly_white",
-        height=800,
-        font=dict(size=24, color='black'),  # Increased base font size
+        font=dict(size=24),  # Increased base font size
         xaxis=dict(
             tickformat='%Y',  # Show only years
             tickangle=0,      # Horizontal labels
-            title_font=dict(size=32, color='#333333'),  # Darker for readability
-            tickfont=dict(size=24, color='#333333'),  # Darker for readability
+            title_font=dict(size=32),  # Increased axis title
+            tickfont=dict(size=24),  # Increased tick labels
             showgrid=True,
             gridcolor='rgba(0,0,0,0.1)'
         ),
         yaxis=dict(
-            title_font=dict(size=20, color='#333333'),  # Darker for readability
-            tickfont=dict(size=16, color='#333333'),  # Darker for readability
+            title_font=dict(size=20),  # Axis title
+            tickfont=dict(size=16),  # Tick labels
             showgrid=True,
             gridcolor='rgba(0,0,0,0.1)'
         ),
-        title_font=dict(size=36, color='#333333'),  # Darker title color
+        title_font=dict(size=36),  # Darker title color
         legend=dict(
             orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1,
-            font=dict(size=14, color='#333333'),
+            font=dict(size=14),
             bgcolor='rgba(255,255,255,0.8)' # Semi-transparent white
         )
     )
@@ -93,13 +91,13 @@ def plot_charts(data):
     fig1.update_layout(
         title='Shiller P/E Ratio and S&P 500 (Nominal Values)',
         xaxis_title='Date',
-        yaxis_title=dict(text='P/E Ratio', font=dict(size=16, color='#333333')),
+        yaxis_title=dict(text='P/E Ratio', font=dict(size=16)),
         yaxis2=dict(
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16, color='#333333')),
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16)),
             overlaying='y',
             side='right',
             type='log',
-            tickfont=dict(color='#333333')
+            tickfont=dict()
         ),
         **chart_settings
     )    # Create second chart: Historical stats
@@ -124,8 +122,8 @@ def plot_charts(data):
             colorscale='Jet',  # Jet, reversed
             showscale=True, 
             colorbar=dict(
-                title=dict(text='Risk', font=dict(size=32, color='#333333')),
-                tickfont=dict(size=24, color='#333333')
+                title=dict(text='Risk', font=dict(size=32)),
+                tickfont=dict(size=24)
             )
         ), 
         text=[f"Date: {d.strftime('%d %b %Y')}<br>Risk: {r:.2f}" for d, r in zip(data['Date'], data['Risk'])], 
@@ -136,8 +134,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=20, color='#333333')),
-            tickfont=dict(size=16, color='#333333')
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=20)),
+            tickfont=dict(size=16)
         )
     })
     
@@ -156,8 +154,8 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='P/E Ratio (Log Scale)', font=dict(size=20, color='#333333')),
-            tickfont=dict(size=16, color='#333333')
+            title=dict(text='P/E Ratio (Log Scale)', font=dict(size=20)),
+            tickfont=dict(size=16)
         )
     })
     
@@ -216,13 +214,11 @@ def plot_correlation_charts(data, start_year=1950, return_years=10):
     
     # Common settings from plot_charts but customized
     chart_settings = dict(
-        template="plotly_white",
-        height=600,
-        font=dict(size=14, color='black'),
-        title_font=dict(size=24, color='#333333'), # Darker title
+        font=dict(size=14),
+        title_font=dict(size=24), # Darker title
         xaxis=dict(
-            title_font=dict(size=18, color='#333333'),
-            tickfont=dict(size=14, color='#333333'),
+            title_font=dict(size=18),
+            tickfont=dict(size=14),
         ),
         # Removed yaxis from here to avoid collision, will handle per chart
         legend=dict(
@@ -236,8 +232,8 @@ def plot_correlation_charts(data, start_year=1950, return_years=10):
     
     # Base Y-Axis settings
     base_yaxis = dict(
-        title_font=dict(size=18, color='#333333'),
-        tickfont=dict(size=14, color='#333333'),
+        title_font=dict(size=18),
+        tickfont=dict(size=14),
         tickformat='.1%' 
     )
 
