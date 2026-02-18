@@ -98,6 +98,20 @@ try:
     data_pe, data_sp500 = get_data()
     # Debug: Show last date in sidebar
     st.sidebar.caption(f"Data Last Updated: {data_pe['Date'].iloc[-1]}")
+    
+    # Add Clear Cache Button
+    if st.sidebar.button("Clear Cache"):
+        st.cache_data.clear()
+        st.rerun()
+
+    # Debug info (optional expander)
+    with st.sidebar.expander("Data Debug Info"):
+        st.write("Last 3 PE Dates:")
+        st.write(data_pe['Date'].tail(3))
+        st.write("Jan 2026 data points:")
+        jan_data = data_pe[data_pe['Date'].dt.to_period('M') == '2026-01']
+        st.write(jan_data)
+
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
