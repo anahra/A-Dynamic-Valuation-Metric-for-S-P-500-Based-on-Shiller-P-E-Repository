@@ -14,60 +14,69 @@ def load_shiller_pe():
     cache_sp500 = os.path.join(os.path.dirname(__file__), 'sp500_data.csv')
 
     def load_and_update(url, cache_path, col_names, value_col):
-        # Check if cache exists and is recent (< 24 hours)
-        if os.path.exists(cache_path):
-            mtime = os.path.getmtime(cache_path)
-            if (datetime.now().timestamp() - mtime) < 86400: # 24 hours
-                return pd.read_csv(cache_path, parse_dates=['Date'])
-            
-            df_local = pd.read_csv(cache_path, parse_dates=['Date'])
-        else:
-            df_local = pd.DataFrame(columns=col_names)
+        df_local = pd.DataFrame(columns=col_names + ['Date'])
+        needs_web_update = True
         
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
-            html = str(soup)
-            df_web = pd.read_html(io.StringIO(html))[0]
-            df_web.columns = col_names
-            df_web['Date'] = pd.to_datetime(df_web['Date'], format="mixed")
-            df_web[value_col] = pd.to_numeric(df_web[value_col], errors='coerce')
-            df_web.sort_values('Date', inplace=True)
-            
-            if not df_local.empty:
-                last_local = df_local['Date'].max()
-                last_web = df_web['Date'].max()
-                if last_web > last_local:
-                    df_new = df_web[df_web['Date'] > last_local]
-                    df_local = pd.concat([df_local, df_new], ignore_index=True)
+        # 1. Load local cache if it exists
+        if os.path.exists(cache_path):
+            df_local = pd.read_csv(cache_path, parse_dates=['Date'])
+            mtime = os.path.getmtime(cache_path)
+            # If cache is recent (< 24 hours), we might not need to fetch from web
+            if (datetime.now().timestamp() - mtime) < 86400:
+                needs_web_update = False
+        
+        # 2. Fetch from web if needed
+        if needs_web_update:
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, 'html.parser')
+                html = str(soup)
+                df_web = pd.read_html(io.StringIO(html))[0]
+                df_web.columns = col_names
+                df_web['Date'] = pd.to_datetime(df_web['Date'], format="mixed")
+                df_web[value_col] = pd.to_numeric(df_web[value_col], errors='coerce')
+                
+                # Merge web data with local data
+                if not df_local.empty:
+                    df_local = pd.concat([df_local, df_web], ignore_index=True)
                     df_local.drop_duplicates(subset=['Date'], inplace=True)
-                    df_local.sort_values('Date', inplace=True)
-            else:
-                df_local = df_web.copy()
-
+                else:
+                    df_local = df_web.copy()
+            except Exception as e:
+                print(f"Error updating {url} from web: {e}")
+        
+        # 3. ALWAYS process and group the data to ensure correct display
+        if not df_local.empty:
             df_local['Month'] = df_local['Date'].dt.to_period('M')
             current_period = pd.Timestamp.now().to_period('M')
             
+            # Historical months: Keep only the last available point of the month, 
+            # but label it as the 1st of the month.
             df_historical = df_local[df_local['Month'] < current_period].copy()
-            df_current = df_local[df_local['Month'] == current_period].copy()
-            
             if not df_historical.empty:
                 df_historical = df_historical.sort_values('Date').groupby('Month').last().reset_index()
                 df_historical['Date'] = df_historical['Month'].dt.to_timestamp()
                 df_historical = df_historical.drop(columns=['Month'])
-                
+            
+            # Current month: Keep both the first available point (anchor) and the latest available point.
+            # We also keep all intermediate points if any, to show the month's progress.
+            df_current = df_local[df_local['Month'] == current_period].copy()
             if not df_current.empty:
                 df_current = df_current.drop(columns=['Month'])
-                
+                # If current month only has one point and it's not the 1st, 
+                # we don't force it to the 1st here; we'll let yfinance handle it if needed.
+            
             df_to_save = pd.concat([df_historical, df_current], ignore_index=True)
             df_to_save.sort_values('Date', inplace=True)
-            df_to_save.to_csv(cache_path, index=False)
+            df_to_save.drop_duplicates(subset=['Date'], inplace=True)
+            df_to_save = df_to_save.reset_index(drop=True)
             
+            # Save the processed data back to cache
+            df_to_save.to_csv(cache_path, index=False)
             return df_to_save
-        except Exception as e:
-            print(f"Error updating from web: {e}")
-            return df_local
+        
+        return df_local
 
     data_pe = load_and_update(url_pe, cache_pe, ['Date', 'PE_Ratio'], 'PE_Ratio')
     data_sp500 = load_and_update(url_sp500, cache_sp500, ['Date', 'S&P_500'], 'S&P_500')
