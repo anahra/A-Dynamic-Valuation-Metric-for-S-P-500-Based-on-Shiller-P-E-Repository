@@ -126,7 +126,7 @@ def get_risk_data(data_pe, data_sp500):
 risk_data = get_risk_data(data_pe, data_sp500)
 
 if app_mode == "Home":
-    st.title("Dynamic Valuation Metric for S&P 500 Based on Shiller P/E")
+    st.title("Dynamic Valuation Metric for S&P 500 Based on Shiller P/E (v1.1)")
     st.markdown("""
     This application analyzes the S&P 500 valuation using the Shiller P/E ratio and simulates a dynamic investment strategy.
     
