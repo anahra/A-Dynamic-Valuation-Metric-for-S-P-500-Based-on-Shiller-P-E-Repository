@@ -110,7 +110,7 @@ def plot_charts(data):
     fig2.update_layout(
         title='Historical Shiller P/E Ratio with Mean and Std Dev',
         xaxis_title='Date',
-        yaxis_title=dict(text='P/E Ratio', font=dict(size=16, color='#333333')),
+        yaxis_title=dict(text='P/E Ratio', font=dict(size=16)),
         **chart_settings
     )
 
@@ -165,7 +165,34 @@ def plot_charts(data):
         **specific_settings
     )
 
-    return [fig1, fig2, fig3, fig4]
+    # Create fifth chart: Risk vs S&P 500
+    fig5 = go.Figure()
+    fig5.add_trace(go.Scatter(x=data['Date'], y=data['Risk'], mode='lines', name='Risk Metric', line=dict(color='orange'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
+    fig5.add_trace(go.Scatter(x=data['Date'], y=data['S&P_500'], mode='lines', name='S&P 500 (Log Scale)', line=dict(color='red'), yaxis='y2', hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
+    
+    specific_settings = chart_settings.copy()
+    specific_settings.update({
+        'yaxis': dict(
+            title=dict(text='Risk Metric', font=dict(size=16)),
+            tickfont=dict(size=14),
+            range=[0, 1]
+        ),
+        'yaxis2': dict(
+            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16)),
+            overlaying='y',
+            side='right',
+            type='log',
+            tickfont=dict(size=14)
+        )
+    })
+    
+    fig5.update_layout(
+        title='Risk Metric and S&P 500 Price',
+        xaxis_title='Date',
+        **specific_settings
+    )
+
+    return [fig1, fig2, fig3, fig4, fig5]
 
 # Now, you can fetch the data and calculate the risk
 if __name__ == "__main__":
