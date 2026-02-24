@@ -88,7 +88,7 @@ st.sidebar.subheader("Tabs")
 app_mode = st.sidebar.radio("Navigation", ["Home", "Market Analysis"], label_visibility="collapsed")
 
 # Load data
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=60)
 def get_data():
     with st.spinner("Loading data..."):
         data_pe, data_sp500 = load_shiller_pe()
