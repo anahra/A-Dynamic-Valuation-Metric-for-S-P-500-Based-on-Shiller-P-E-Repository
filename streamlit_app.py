@@ -125,13 +125,13 @@ if app_mode == "Home":
     latest_date = risk_data['Date'].iloc[-1].strftime('%Y-%m-%d')
 
     # Determine label and color
-    if latest_risk < 0.1:
+    if latest_risk < 0.2:
         risk_label = "Extreme Undervaluation"
         risk_color = "green"
     elif latest_risk < 0.4:
         risk_label = "Undervaluation"
         risk_color = "lightgreen"
-    elif latest_risk < 0.6:
+    elif latest_risk < 0.7:
         risk_label = "Fair Value"
         risk_color = "gray"
     elif latest_risk < 0.9:
@@ -293,7 +293,7 @@ elif app_mode == "Price Targets":
         if r >= 0.9: status = "🔴 Extreme Overvaluation"
         elif r >= 0.7: status = "🟠 Overvaluation"
         elif r >= 0.4: status = "🟡 Fair Value"
-        elif r >= 0.1: status = "🟢 Undervaluation"
+        elif r >= 0.2: status = "🟢 Undervaluation"
         else: status = "🔵 Extreme Undervaluation"
         
         targets.append({
