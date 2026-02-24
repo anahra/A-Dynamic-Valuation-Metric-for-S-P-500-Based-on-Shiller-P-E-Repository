@@ -85,7 +85,7 @@ if os.path.exists(logo_path):
     st.sidebar.image(logo_path, use_container_width=True)
 
 st.sidebar.subheader("Tabs")
-app_mode = st.sidebar.radio("Navigation", ["Home", "Market Analysis"], label_visibility="collapsed")
+app_mode = st.sidebar.radio("Navigation", ["Home", "Market Analysis", "Price Targets"], label_visibility="collapsed")
 
 # Load data
 @st.cache_data(ttl=60)
@@ -238,6 +238,90 @@ elif app_mode == "Market Analysis":
             st.markdown("#### Yearly Averaged Data")
             st.caption("Data is averaged annually (mean Risk/PE/Price for the year) to reduce noise.")
             st.plotly_chart(corr_figs[3], use_container_width=True, key="corr_pe_yearly")
+
+elif app_mode == "Price Targets":
+    st.title("S&P 500 Price Targets & Drawdown Analysis")
+    st.markdown("""
+    This analysis calculates the S&P 500 price levels required to reach specific risk thresholds. 
+    These targets are based on the current 10-year average earnings (E10) and the statistical 
+    boundaries of the Shiller P/E ratio.
+    """)
+
+    # Calculate components
+    latest_data = risk_data.iloc[-1]
+    latest_price = latest_data['S&P_500']
+    latest_pe = latest_data['PE_Ratio']
+    latest_upper = latest_data['Upper_Bound']
+    latest_lower = latest_data['Lower_Bound']
+    latest_earnings = latest_price / latest_pe
+    
+    # Re-calculate Risk_raw bounds from the entire dataset to match compute_risk logic
+    risk_raw = (risk_data['PE_Ratio'] - risk_data['Lower_Bound']) / (risk_data['Upper_Bound'] - risk_data['Lower_Bound'])
+    risk_raw_min = risk_raw.min()
+    risk_raw_max = risk_raw.max()
+    
+    st.divider()
+    
+    # Current Status Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Current S&P 500", f"{latest_price:,.2f}")
+    with col2:
+        st.metric("Current Risk", f"{latest_data['Risk']:.1%}")
+    with col3:
+        st.metric("Current Shiller P/E", f"{latest_pe:.2f}")
+    with col4:
+        st.metric("Implied E10 Earnings", f"${latest_earnings:,.2f}")
+
+    st.markdown("### Price Targets by Risk Level")
+    
+    targets = []
+    # Use a range of risk levels including extreme values
+    risk_levels = [0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05]
+    
+    for r in risk_levels:
+        # Invert the normalization: Risk = (R_raw - min) / (max - min)
+        r_raw = r * (risk_raw_max - risk_raw_min) + risk_raw_min
+        # Invert the raw risk: R_raw = (PE - Lower) / (Upper - Lower)
+        target_pe = r_raw * (latest_upper - latest_lower) + latest_lower
+        # Calculate price based on target PE and current earnings
+        target_price = target_pe * latest_earnings
+        # Calculate drawdown/gain from current price
+        change_pct = (target_price / latest_price) - 1
+        
+        # Determine status label
+        if r >= 0.9: status = "🔴 Extreme Overvaluation"
+        elif r >= 0.7: status = "🟠 Overvaluation"
+        elif r >= 0.4: status = "🟡 Fair Value"
+        elif r >= 0.1: status = "🟢 Undervaluation"
+        else: status = "🔵 Extreme Undervaluation"
+        
+        targets.append({
+            "Risk Threshold": f"{r:.0%}",
+            "Status": status,
+            "Target Price": f"${target_price:,.2f}",
+            "Target Shiller P/E": f"{target_pe:.2f}",
+            "Required Change": f"{change_pct:+.2%}"
+        })
+    
+    df_targets = pd.DataFrame(targets)
+    
+    # Style the dataframe
+    def style_change(val):
+        color = 'red' if '-' in val else 'green'
+        if val == '+0.00%': color = 'white'
+        return f'color: {color}'
+
+    # Display as a nicely formatted table
+    st.table(df_targets)
+    
+    st.info("""
+    **Calculation Methodology:**
+    1. **E10 Earnings**: Derived as `Current S&P 500 / Current Shiller P/E`.
+    2. **Target P/E**: Derived by inverting the Risk metric formula using the latest rolling statistical boundaries (±3 Standard Deviations).
+    3. **Target Price**: `Target P/E * E10 Earnings`.
+    4. **Required Change**: Percentage difference between the Target Price and the Current Price.
+    """)
 
 elif app_mode == "Strategy Simulator":
     st.sidebar.markdown("---")
