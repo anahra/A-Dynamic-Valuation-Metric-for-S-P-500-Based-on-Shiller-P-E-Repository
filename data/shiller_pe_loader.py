@@ -51,21 +51,27 @@ def load_shiller_pe():
             df_local['Month'] = df_local['Date'].dt.to_period('M')
             current_period = pd.Timestamp.now().to_period('M')
             
-            # Historical months: Keep only the last available point of the month, 
-            # but label it as the 1st of the month.
+            # Historical months: Keep only the LAST available point of each previous month, 
+            # and label it as the 1st of that month on the chart. 
+            # This ensures exactly one point per historical month.
             df_historical = df_local[df_local['Month'] < current_period].copy()
             if not df_historical.empty:
                 df_historical = df_historical.sort_values('Date').groupby('Month').last().reset_index()
                 df_historical['Date'] = df_historical['Month'].dt.to_timestamp()
                 df_historical = df_historical.drop(columns=['Month'])
             
-            # Current month: Keep both the first available point (anchor) and the latest available point.
-            # We also keep all intermediate points if any, to show the month's progress.
+            # Current month: Keep ONLY the first available point (anchor) 
+            # and the absolute latest available point. 
+            # This prevents multiple daily snapshots from accumulating in the display.
             df_current = df_local[df_local['Month'] == current_period].copy()
             if not df_current.empty:
+                df_current = df_current.sort_values('Date')
+                if len(df_current) > 2:
+                    # Select first and last rows
+                    df_current = pd.concat([df_current.iloc[[0]], df_current.iloc[[-1]]])
+                
+                df_current = df_current.drop_duplicates(subset=['Date'])
                 df_current = df_current.drop(columns=['Month'])
-                # If current month only has one point and it's not the 1st, 
-                # we don't force it to the 1st here; we'll let yfinance handle it if needed.
             
             df_to_save = pd.concat([df_historical, df_current], ignore_index=True)
             df_to_save.sort_values('Date', inplace=True)
@@ -100,9 +106,9 @@ def load_shiller_pe():
             live_price = live_df['Close'].iloc[-1]
             live_date = live_df.index[-1].replace(tzinfo=None) # Remove timezone for compatibility
             
-            # Check if we need to append
-            # We append if the live date is strictly greater than the last monthly date
-            if live_date > last_date:
+            # Check if we need to append or update
+            # We update if the live date is >= the last date in our table
+            if live_date >= last_date:
                 # Calculate Live PE
                 live_pe = live_price / implied_earnings
                 
@@ -110,11 +116,30 @@ def load_shiller_pe():
                 new_pe_row = pd.DataFrame({'Date': [live_date], 'PE_Ratio': [live_pe]})
                 new_sp500_row = pd.DataFrame({'Date': [live_date], 'S&P_500': [live_price]})
                 
-                # Append to dataframes (in memory only)
-                data_pe = pd.concat([data_pe, new_pe_row], ignore_index=True)
-                data_sp500 = pd.concat([data_sp500, new_sp500_row], ignore_index=True)
+                # Append to dataframes and drop duplicates (keeping the more recent live value)
+                data_pe = pd.concat([data_pe, new_pe_row], ignore_index=True).drop_duplicates(subset=['Date'], keep='last')
+                data_sp500 = pd.concat([data_sp500, new_sp500_row], ignore_index=True).drop_duplicates(subset=['Date'], keep='last')
                 
     except Exception as e:
         print(f"Error fetching live data: {e}")
+
+    # --- Final Cleanup ---
+    # Ensure current month only shows TWO points: 1st of month (anchor) and absolute latest.
+    # This specifically addresses the user's request to see only the first day and latest day.
+    def finalize_month_display(df):
+        if df.empty: return df
+        current_period = pd.Timestamp.now().to_period('M')
+        mask_current = df['Date'].dt.to_period('M') == current_period
+        if not mask_current.any():
+            return df
+        df_hist = df[~mask_current]
+        df_curr = df[mask_current].sort_values('Date')
+        if len(df_curr) > 2:
+            # Keep only the first and the absolute last point
+            df_curr = pd.concat([df_curr.iloc[[0]], df_curr.iloc[[-1]]])
+        return pd.concat([df_hist, df_curr], ignore_index=True)
+
+    data_pe = finalize_month_display(data_pe)
+    data_sp500 = finalize_month_display(data_sp500)
 
     return data_pe, data_sp500
