@@ -171,7 +171,7 @@ elif app_mode == "Market Analysis":
     risk_figs = plot_charts(risk_data, use_nominal=use_nominal)
     
     # Tabs for full-screen graphs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Risk Analysis", "Risk vs Price", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics", "Correlation Analysis"])
+    tab1, tab2, tab2b, tab3, tab4, tab5, tab6 = st.tabs(["Risk Analysis", "Risk vs Price", "Risk Distribution", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics", "Correlation Analysis"])
     
     with tab1:
         st.plotly_chart(risk_figs[2], use_container_width=True, key="risk_analysis")
@@ -180,6 +180,10 @@ elif app_mode == "Market Analysis":
     with tab2:
         st.plotly_chart(risk_figs[4], use_container_width=True, key="risk_price")
         st.caption("Comparison of the Risk Metric (0-1) and the S&P 500 price (log scale).")
+
+    with tab2b:
+        st.plotly_chart(risk_figs[5], use_container_width=True, key="risk_distribution")
+        st.caption("Distribution of months spent at each risk level. Shows how frequently the market has been at various valuation levels historically.")
 
     with tab3:
         st.plotly_chart(risk_figs[3], use_container_width=True, key="log_corridor")
