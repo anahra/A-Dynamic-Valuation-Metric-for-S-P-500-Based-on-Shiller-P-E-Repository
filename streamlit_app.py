@@ -114,6 +114,11 @@ def get_risk_data(data_pe, data_sp500):
 
 risk_data = get_risk_data(data_pe, data_sp500)
 
+# Ensure S&P_500_Nominal column exists (may be missing if CPI load failed or cache is stale)
+if 'S&P_500_Nominal' not in risk_data.columns:
+    risk_data = risk_data.copy()
+    risk_data['S&P_500_Nominal'] = risk_data['S&P_500']
+
 if app_mode == "Home":
     st.title("Dynamic Valuation Metric for S&P 500 Based on Shiller P/E")
     st.markdown("""
