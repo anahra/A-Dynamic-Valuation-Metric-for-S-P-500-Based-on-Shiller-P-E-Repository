@@ -44,9 +44,10 @@ def load_shiller_pe():
                 df_web['Date'] = pd.to_datetime(df_web['Date'], format="mixed")
                 df_web[value_col] = pd.to_numeric(df_web[value_col], errors='coerce')
                 
-                # Merge web data with local data, preferring web (more recent)
+                # Merge web data with local data, preferring local cached values
+                # (cache has accumulated actual end-of-month prices from yfinance)
                 if not df_local.empty:
-                    df_local = pd.concat([df_web, df_local], ignore_index=True)
+                    df_local = pd.concat([df_local, df_web], ignore_index=True)
                     df_local.drop_duplicates(subset=['Date'], keep='first', inplace=True)
                 else:
                     df_local = df_web.copy()
