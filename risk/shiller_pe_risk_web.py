@@ -199,8 +199,8 @@ def plot_charts(data, use_nominal=False):
     # Create sixth chart: Risk Distribution (months at each level)
     bins = np.arange(0, 1.1, 0.1)
     bin_labels = [f'{bins[i]:.1f}–{bins[i+1]:.1f}' for i in range(len(bins)-1)]
-    data['Risk_Bin'] = pd.cut(data['Risk'], bins=bins, labels=bin_labels, include_lowest=True)
-    bin_counts = data['Risk_Bin'].value_counts().reindex(bin_labels).fillna(0)
+    risk_bins = pd.cut(data['Risk'], bins=bins, labels=bin_labels, include_lowest=True)
+    bin_counts = risk_bins.value_counts().reindex(bin_labels).fillna(0)
     total_months = bin_counts.sum()
     bin_pcts = (bin_counts / total_months * 100)
     
