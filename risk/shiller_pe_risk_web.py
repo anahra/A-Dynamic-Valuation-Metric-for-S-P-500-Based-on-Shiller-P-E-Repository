@@ -196,73 +196,7 @@ def plot_charts(data, use_nominal=False):
         **specific_settings
     )
 
-    # Create sixth chart: Risk Distribution (months at each level)
-    bins = np.arange(0, 1.1, 0.1)
-    bin_labels = [f'{bins[i]:.1f}–{bins[i+1]:.1f}' for i in range(len(bins)-1)]
-    risk_bins = pd.cut(data['Risk'], bins=bins, labels=bin_labels, include_lowest=True)
-    bin_counts = risk_bins.value_counts().reindex(bin_labels).fillna(0)
-    total_months = bin_counts.sum()
-    bin_pcts = (bin_counts / total_months * 100)
-    
-    # Jet colorscale colors for each bin (blue → cyan → green → yellow → red)
-    jet_colors = [
-        '#00007F', '#0000FF', '#007FFF', '#00FFFF', '#7FFF7F',
-        '#FFFF00', '#FF7F00', '#FF0000', '#7F0000', '#7F0000'
-    ]
-    
-    # Identify which bin the current risk falls in
-    current_risk = data['Risk'].iloc[-1]
-    current_bin_idx = min(int(current_risk * 10), 9)
-    
-    # Compute percentile: % of months with LOWER risk than current
-    pct_more_expensive = (data['Risk'] <= current_risk).mean() * 100
-    
-    # Highlight the current bin with a white border
-    border_widths = [1] * 10
-    border_colors = ['rgba(255,255,255,0.2)'] * 10
-    border_widths[current_bin_idx] = 4
-    border_colors[current_bin_idx] = 'white'
-    
-    # Custom text: add "▶ YOU ARE HERE" to the current bin
-    bar_texts = []
-    for i, (c, p) in enumerate(zip(bin_counts.values, bin_pcts.values)):
-        label = f'{int(c)} months ({p:.1f}%)'
-        if i == current_bin_idx:
-            label = f'▼ CURRENT ▼<br>{int(c)} months ({p:.1f}%)'
-        bar_texts.append(label)
-    
-    fig6 = go.Figure()
-    fig6.add_trace(go.Bar(
-        x=bin_labels,
-        y=bin_counts.values,
-        marker_color=jet_colors,
-        marker_line_width=border_widths,
-        marker_line_color=border_colors,
-        text=bar_texts,
-        textposition='outside',
-        textfont=dict(size=13),
-        hovertemplate='Risk: %{x}<br>Months: %{y}<br><extra></extra>'
-    ))
-    
-    fig6.update_layout(
-        title='Risk Level Distribution (Months Spent at Each Level)',
-        xaxis_title='Risk Level',
-        yaxis_title='Number of Months',
-        height=700,
-        font=dict(size=16),
-        xaxis=dict(
-            tickfont=dict(size=16),
-            title_font=dict(size=20)
-        ),
-        yaxis=dict(
-            tickfont=dict(size=16),
-            title_font=dict(size=20)
-        ),
-        title_font=dict(size=28),
-        bargap=0.15
-    )
-
-    return [fig1, fig2, fig3, fig4, fig5, fig6, pct_more_expensive]
+    return [fig1, fig2, fig3, fig4, fig5]
 
 # Now, you can fetch the data and calculate the risk
 if __name__ == "__main__":

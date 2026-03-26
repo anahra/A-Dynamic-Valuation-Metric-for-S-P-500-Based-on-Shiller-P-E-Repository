@@ -168,9 +168,7 @@ if app_mode == "Home":
     st.caption(f"As of {latest_date}")
 
 elif app_mode == "Market Analysis":
-    risk_figs_result = plot_charts(risk_data, use_nominal=use_nominal)
-    risk_figs = risk_figs_result[:6]  # The 6 figures
-    pct_more_expensive = risk_figs_result[6]  # Percentile
+    risk_figs = plot_charts(risk_data, use_nominal=use_nominal)
     
     # Tabs for full-screen graphs
     tab1, tab2, tab2b, tab3, tab4, tab5, tab6 = st.tabs(["Risk Analysis", "Risk vs Price", "Risk Distribution", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics", "Correlation Analysis"])
@@ -184,35 +182,98 @@ elif app_mode == "Market Analysis":
         st.caption("Comparison of the Risk Metric (0-1) and the S&P 500 price (log scale).")
 
     with tab2b:
+        import plotly.graph_objects as go_dist
+        
+        start_year_dist = st.slider(
+            "Start Analysis From Year", 
+            min_value=1900, 
+            max_value=2020, 
+            value=1950, 
+            step=5,
+            key="dist_start_year"
+        )
+        
+        # Filter data by start year
+        filtered_risk = risk_data[risk_data['Date'].dt.year >= start_year_dist]
         current_risk = risk_data['Risk'].iloc[-1]
         
+        # Compute bins
+        bins = np.arange(0, 1.1, 0.1)
+        bin_labels = [f'{bins[i]:.1f}–{bins[i+1]:.1f}' for i in range(len(bins)-1)]
+        risk_bins = pd.cut(filtered_risk['Risk'], bins=bins, labels=bin_labels, include_lowest=True)
+        bin_counts = risk_bins.value_counts().reindex(bin_labels).fillna(0)
+        total_months = bin_counts.sum()
+        bin_pcts = (bin_counts / total_months * 100)
+        
+        # Percentile within filtered data
+        pct_filtered = (filtered_risk['Risk'] <= current_risk).mean() * 100
+        
         # Executive summary
-        if pct_more_expensive >= 80:
-            emoji = "🔴"
-            tone = "significantly overvalued"
-        elif pct_more_expensive >= 60:
-            emoji = "🟠"
-            tone = "above average valuation"
-        elif pct_more_expensive >= 40:
-            emoji = "🟡"
-            tone = "near fair value"
-        elif pct_more_expensive >= 20:
-            emoji = "🟢"
-            tone = "below average valuation"
+        if pct_filtered >= 80:
+            emoji, tone = "🔴", "significantly overvalued"
+        elif pct_filtered >= 60:
+            emoji, tone = "🟠", "above average valuation"
+        elif pct_filtered >= 40:
+            emoji, tone = "🟡", "near fair value"
+        elif pct_filtered >= 20:
+            emoji, tone = "🟢", "below average valuation"
         else:
-            emoji = "🔵"
-            tone = "significantly undervalued"
+            emoji, tone = "🔵", "significantly undervalued"
         
         st.markdown(f"""
-        ### {emoji} Current Valuation Context
+        ### {emoji} Current Valuation Context (since {start_year_dist})
         
-        With a risk level of **{current_risk:.2f}**, the market is currently **more expensive than {pct_more_expensive:.0f}% of all historical months** since 1900.
+        With a risk level of **{current_risk:.2f}**, the market is currently **more expensive than {pct_filtered:.0f}% of all months** since {start_year_dist}.
         
-        This places the current market at a level of **{tone}** — only **{100 - pct_more_expensive:.0f}%** of months in history have been more expensive than today.
+        This places the current market at a level of **{tone}** — only **{100 - pct_filtered:.0f}%** of months since {start_year_dist} have been more expensive than today.
         """)
         
-        st.plotly_chart(risk_figs[5], use_container_width=True, key="risk_distribution")
-        st.caption("Distribution of months spent at each risk level. Shows how frequently the market has been at various valuation levels historically.")
+        # Build chart
+        jet_colors = [
+            '#00007F', '#0000FF', '#007FFF', '#00FFFF', '#7FFF7F',
+            '#FFFF00', '#FF7F00', '#FF0000', '#7F0000', '#7F0000'
+        ]
+        current_bin_idx = min(int(current_risk * 10), 9)
+        
+        border_widths = [1] * 10
+        border_colors = ['rgba(255,255,255,0.2)'] * 10
+        border_widths[current_bin_idx] = 4
+        border_colors[current_bin_idx] = 'white'
+        
+        bar_texts = []
+        for i, (c, p) in enumerate(zip(bin_counts.values, bin_pcts.values)):
+            label = f'{int(c)} mo. ({p:.1f}%)'
+            if i == current_bin_idx:
+                label = f'▼ CURRENT ▼<br>{int(c)} mo. ({p:.1f}%)'
+            bar_texts.append(label)
+        
+        fig_dist = go_dist.Figure()
+        fig_dist.add_trace(go_dist.Bar(
+            x=bin_labels,
+            y=bin_counts.values,
+            marker_color=jet_colors,
+            marker_line_width=border_widths,
+            marker_line_color=border_colors,
+            text=bar_texts,
+            textposition='outside',
+            textfont=dict(size=13),
+            hovertemplate='Risk: %{x}<br>Months: %{y}<br><extra></extra>'
+        ))
+        
+        fig_dist.update_layout(
+            title=f'Risk Level Distribution — Months Spent at Each Level (since {start_year_dist})',
+            xaxis_title='Risk Level',
+            yaxis_title='Number of Months',
+            height=700,
+            font=dict(size=16),
+            xaxis=dict(tickfont=dict(size=16), title_font=dict(size=20)),
+            yaxis=dict(tickfont=dict(size=16), title_font=dict(size=20)),
+            title_font=dict(size=28),
+            bargap=0.15
+        )
+        
+        st.plotly_chart(fig_dist, use_container_width=True, key="risk_distribution")
+        st.caption("Distribution of months spent at each risk level. Adjust the slider to analyze different historical periods.")
 
     with tab3:
         st.plotly_chart(risk_figs[3], use_container_width=True, key="log_corridor")
