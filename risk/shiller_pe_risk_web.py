@@ -214,29 +214,35 @@ def plot_charts(data, use_nominal=False):
     current_risk = data['Risk'].iloc[-1]
     current_bin_idx = min(int(current_risk * 10), 9)
     
+    # Compute percentile: % of months with LOWER risk than current
+    pct_more_expensive = (data['Risk'] <= current_risk).mean() * 100
+    
+    # Highlight the current bin with a white border
+    border_widths = [1] * 10
+    border_colors = ['rgba(255,255,255,0.2)'] * 10
+    border_widths[current_bin_idx] = 4
+    border_colors[current_bin_idx] = 'white'
+    
+    # Custom text: add "▶ YOU ARE HERE" to the current bin
+    bar_texts = []
+    for i, (c, p) in enumerate(zip(bin_counts.values, bin_pcts.values)):
+        label = f'{int(c)} months ({p:.1f}%)'
+        if i == current_bin_idx:
+            label = f'▼ CURRENT ▼<br>{int(c)} months ({p:.1f}%)'
+        bar_texts.append(label)
+    
     fig6 = go.Figure()
     fig6.add_trace(go.Bar(
         x=bin_labels,
         y=bin_counts.values,
         marker_color=jet_colors,
-        text=[f'{int(c)} months<br>({p:.1f}%)' for c, p in zip(bin_counts.values, bin_pcts.values)],
+        marker_line_width=border_widths,
+        marker_line_color=border_colors,
+        text=bar_texts,
         textposition='outside',
-        textfont=dict(size=14),
+        textfont=dict(size=13),
         hovertemplate='Risk: %{x}<br>Months: %{y}<br><extra></extra>'
     ))
-    
-    # Highlight current risk bucket
-    fig6.add_annotation(
-        x=bin_labels[current_bin_idx],
-        y=bin_counts.values[current_bin_idx],
-        text=f'← Current ({current_risk:.2f})',
-        showarrow=True,
-        arrowhead=2,
-        arrowsize=1.5,
-        arrowcolor='white',
-        font=dict(size=16, color='white'),
-        ax=60, ay=-40
-    )
     
     fig6.update_layout(
         title='Risk Level Distribution (Months Spent at Each Level)',
@@ -256,7 +262,7 @@ def plot_charts(data, use_nominal=False):
         bargap=0.15
     )
 
-    return [fig1, fig2, fig3, fig4, fig5, fig6]
+    return [fig1, fig2, fig3, fig4, fig5, fig6, pct_more_expensive]
 
 # Now, you can fetch the data and calculate the risk
 if __name__ == "__main__":

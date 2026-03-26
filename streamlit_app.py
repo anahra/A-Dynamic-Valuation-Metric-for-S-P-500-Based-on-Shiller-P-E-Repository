@@ -168,7 +168,9 @@ if app_mode == "Home":
     st.caption(f"As of {latest_date}")
 
 elif app_mode == "Market Analysis":
-    risk_figs = plot_charts(risk_data, use_nominal=use_nominal)
+    risk_figs_result = plot_charts(risk_data, use_nominal=use_nominal)
+    risk_figs = risk_figs_result[:6]  # The 6 figures
+    pct_more_expensive = risk_figs_result[6]  # Percentile
     
     # Tabs for full-screen graphs
     tab1, tab2, tab2b, tab3, tab4, tab5, tab6 = st.tabs(["Risk Analysis", "Risk vs Price", "Risk Distribution", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics", "Correlation Analysis"])
@@ -182,6 +184,33 @@ elif app_mode == "Market Analysis":
         st.caption("Comparison of the Risk Metric (0-1) and the S&P 500 price (log scale).")
 
     with tab2b:
+        current_risk = risk_data['Risk'].iloc[-1]
+        
+        # Executive summary
+        if pct_more_expensive >= 80:
+            emoji = "🔴"
+            tone = "significantly overvalued"
+        elif pct_more_expensive >= 60:
+            emoji = "🟠"
+            tone = "above average valuation"
+        elif pct_more_expensive >= 40:
+            emoji = "🟡"
+            tone = "near fair value"
+        elif pct_more_expensive >= 20:
+            emoji = "🟢"
+            tone = "below average valuation"
+        else:
+            emoji = "🔵"
+            tone = "significantly undervalued"
+        
+        st.markdown(f"""
+        ### {emoji} Current Valuation Context
+        
+        With a risk level of **{current_risk:.2f}**, the market is currently **more expensive than {pct_more_expensive:.0f}% of all historical months** since 1900.
+        
+        This places the current market at a level of **{tone}** — only **{100 - pct_more_expensive:.0f}%** of months in history have been more expensive than today.
+        """)
+        
         st.plotly_chart(risk_figs[5], use_container_width=True, key="risk_distribution")
         st.caption("Distribution of months spent at each risk level. Shows how frequently the market has been at various valuation levels historically.")
 
