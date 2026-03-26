@@ -87,6 +87,10 @@ if os.path.exists(logo_path):
 st.sidebar.subheader("Tabs")
 app_mode = st.sidebar.radio("Navigation", ["Home", "Market Analysis", "Price Targets"], label_visibility="collapsed")
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("Settings")
+use_nominal = st.sidebar.toggle("Show Nominal Prices", value=False, help="Toggle between Real (inflation-adjusted) and Nominal S&P 500 prices in charts")
+
 # Load data
 @st.cache_data(ttl=60)
 def get_data():
@@ -159,7 +163,7 @@ if app_mode == "Home":
     st.caption(f"As of {latest_date}")
 
 elif app_mode == "Market Analysis":
-    risk_figs = plot_charts(risk_data)
+    risk_figs = plot_charts(risk_data, use_nominal=use_nominal)
     
     # Tabs for full-screen graphs
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Risk Analysis", "Risk vs Price", "Logarithmic Corridor", "Rolling Statistics", "Historical Statistics", "Correlation Analysis"])

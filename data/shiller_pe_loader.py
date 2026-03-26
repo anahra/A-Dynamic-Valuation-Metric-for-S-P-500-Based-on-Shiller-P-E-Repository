@@ -10,8 +10,10 @@ from datetime import datetime, timedelta
 def load_shiller_pe():
     url_pe = "https://www.multpl.com/shiller-pe/table/by-month"
     url_sp500 = "https://www.multpl.com/s-p-500-historical-prices/table/by-month"
+    url_cpi = "https://www.multpl.com/cpi/table/by-month"
     cache_pe = os.path.join(os.path.dirname(__file__), 'shiller_pe_data.csv')
     cache_sp500 = os.path.join(os.path.dirname(__file__), 'sp500_data.csv')
+    cache_cpi = os.path.join(os.path.dirname(__file__), 'cpi_data.csv')
 
     def load_and_update(url, cache_path, col_names, value_col):
         df_local = pd.DataFrame(columns=col_names + ['Date'])
@@ -42,6 +44,8 @@ def load_shiller_pe():
                 df_web = pd.read_html(io.StringIO(html))[0]
                 df_web.columns = col_names
                 df_web['Date'] = pd.to_datetime(df_web['Date'], format="mixed")
+                # Clean value strings (handles cases like '320.18 estimate')
+                df_web[value_col] = df_web[value_col].astype(str).str.extract(r'([\d.]+)')[0]
                 df_web[value_col] = pd.to_numeric(df_web[value_col], errors='coerce')
                 
                 # Merge web data with local data, preferring local cached values
@@ -91,6 +95,7 @@ def load_shiller_pe():
 
     data_pe = load_and_update(url_pe, cache_pe, ['Date', 'PE_Ratio'], 'PE_Ratio')
     data_sp500 = load_and_update(url_sp500, cache_sp500, ['Date', 'S&P_500'], 'S&P_500')
+    data_cpi = load_and_update(url_cpi, cache_cpi, ['Date', 'CPI'], 'CPI')
 
     # --- Live Data Logic ---
     try:
@@ -176,5 +181,34 @@ def load_shiller_pe():
 
     data_pe = finalize_month_display(data_pe)
     data_sp500 = finalize_month_display(data_sp500)
+
+    # --- Compute Nominal S&P 500 prices using CPI ---
+    try:
+        if not data_cpi.empty:
+            data_sp500_sorted = data_sp500.sort_values('Date').reset_index(drop=True)
+            data_cpi_sorted = data_cpi.sort_values('Date').reset_index(drop=True)
+            
+            # Merge CPI into SP500 using nearest prior date
+            sp500_with_cpi = pd.merge_asof(
+                data_sp500_sorted, 
+                data_cpi_sorted[['Date', 'CPI']], 
+                on='Date'
+            )
+            
+            # Latest CPI value
+            latest_cpi = sp500_with_cpi['CPI'].dropna().iloc[-1]
+            
+            # Convert: Nominal = Real × (CPI_at_time / CPI_latest)
+            sp500_with_cpi['S&P_500_Nominal'] = (
+                sp500_with_cpi['S&P_500'] * (sp500_with_cpi['CPI'] / latest_cpi)
+            )
+            
+            # Drop CPI column, keep both S&P_500 (real) and S&P_500_Nominal
+            data_sp500 = sp500_with_cpi.drop(columns=['CPI'])
+        else:
+            data_sp500['S&P_500_Nominal'] = data_sp500['S&P_500']
+    except Exception as e:
+        print(f"Error computing nominal prices: {e}")
+        data_sp500['S&P_500_Nominal'] = data_sp500['S&P_500']
 
     return data_pe, data_sp500

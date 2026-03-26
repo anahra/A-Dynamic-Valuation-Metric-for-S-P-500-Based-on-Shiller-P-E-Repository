@@ -51,7 +51,11 @@ def compute_risk(data_pe, data_sp500, rolling_window_upper=300, rolling_window_l
     return data
 
 # Chart plotting functions
-def plot_charts(data):
+def plot_charts(data, use_nominal=False):
+    # Determine which S&P 500 column and labels to use
+    sp500_col = 'S&P_500_Nominal' if use_nominal and 'S&P_500_Nominal' in data.columns else 'S&P_500'
+    sp500_type = 'Nominal' if use_nominal else 'Real (Inflation-Adj.)'
+    sp500_axis_label = f'S&P 500 ({sp500_type}, Log Scale)'
     # Common chart settings
     chart_settings = dict(
         height=800,
@@ -88,13 +92,13 @@ def plot_charts(data):
     fig1.add_trace(go.Scatter(x=data['Date'], y=data['Rolling_Mean_upper'], mode='lines', name='Rolling Mean', line=dict(color='orange'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     fig1.add_trace(go.Scatter(x=data['Date'], y=data['Upper_Bound'], mode='lines', name='Upper Bound (±3 Std Dev)', line=dict(color='gray', dash='dot'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     fig1.add_trace(go.Scatter(x=data['Date'], y=data['Lower_Bound'], mode='lines', name='Lower Bound (±3 Std Dev)', line=dict(color='gray', dash='dot'), fill='tonexty', fillcolor='rgba(128, 128, 128, 0.2)', hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
-    fig1.add_trace(go.Scatter(x=data['Date'], y=data['S&P_500'], mode='lines', name='S&P 500 (Nominal)', line=dict(color='red'), yaxis='y2', hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
+    fig1.add_trace(go.Scatter(x=data['Date'], y=data[sp500_col], mode='lines', name=f'S&P 500 ({sp500_type})', line=dict(color='red'), yaxis='y2', hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     fig1.update_layout(
-        title='Shiller P/E Ratio and S&P 500 (Nominal Values)',
+        title=f'Shiller P/E Ratio and S&P 500 ({sp500_type})',
         xaxis_title='Date',
         yaxis_title=dict(text='P/E Ratio', font=dict(size=16)),
         yaxis2=dict(
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16)),
+            title=dict(text=sp500_axis_label, font=dict(size=16)),
             overlaying='y',
             side='right',
             type='log',
@@ -116,7 +120,7 @@ def plot_charts(data):
 
     # Create third chart: S&P 500 risk-based color coding
     fig3 = go.Figure()
-    fig3.add_trace(go.Scatter(x=data['Date'], y=data['S&P_500'], mode='markers', 
+    fig3.add_trace(go.Scatter(x=data['Date'], y=data[sp500_col], mode='markers', 
         marker=dict(
             size=8, 
             color=data['Risk'], 
@@ -135,13 +139,13 @@ def plot_charts(data):
     specific_settings.update({
         'yaxis': dict(
             type='log',
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=20)),
+            title=dict(text=sp500_axis_label, font=dict(size=20)),
             tickfont=dict(size=16)
         )
     })
     
     fig3.update_layout(
-        title='S&P 500 (Nominal) with P/E Risk-Based Color Coding',
+        title=f'S&P 500 ({sp500_type}) with P/E Risk-Based Color Coding',
         **specific_settings
     )
 
@@ -168,7 +172,7 @@ def plot_charts(data):
     # Create fifth chart: Risk vs S&P 500
     fig5 = go.Figure()
     fig5.add_trace(go.Scatter(x=data['Date'], y=data['Risk'], mode='lines', name='Risk Metric', line=dict(color='orange'), hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
-    fig5.add_trace(go.Scatter(x=data['Date'], y=data['S&P_500'], mode='lines', name='S&P 500 (Log Scale)', line=dict(color='red'), yaxis='y2', hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
+    fig5.add_trace(go.Scatter(x=data['Date'], y=data[sp500_col], mode='lines', name=f'S&P 500 ({sp500_type}, Log Scale)', line=dict(color='red'), yaxis='y2', hovertemplate='%{x|%d %b %Y}: %{y:.2f}<extra></extra>'))
     
     specific_settings = chart_settings.copy()
     specific_settings.update({
@@ -178,7 +182,7 @@ def plot_charts(data):
             range=[0, 1]
         ),
         'yaxis2': dict(
-            title=dict(text='S&P 500 (Nominal, Log Scale)', font=dict(size=16)),
+            title=dict(text=sp500_axis_label, font=dict(size=16)),
             overlaying='y',
             side='right',
             type='log',
@@ -187,7 +191,7 @@ def plot_charts(data):
     })
     
     fig5.update_layout(
-        title='Risk Metric and S&P 500 Price',
+        title=f'Risk Metric and S&P 500 Price ({sp500_type})',
         xaxis_title='Date',
         **specific_settings
     )
